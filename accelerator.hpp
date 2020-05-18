@@ -7,6 +7,7 @@
 
 #include "utils.hpp"
 #include "player.hpp"
+#include "shader.hpp"
 
 struct Accelerator
 {
@@ -16,15 +17,21 @@ void run();
 void update(double elapsed);
 void render();
 
+void renderCrosshair();
+
 void onWindowClose();
 void onWindowFocus(bool focused);
 void onCursorPosition(double xPos, double yPos);
+void onKey(int key, int scanCode ,int action, int mods);
 
-Player m_player;
+Player* m_player;
 
-glm::mat4 projection;
+Shader m_shader;
+glm::mat4 m_projection;
 
 GLFWwindow* m_window = nullptr;
+int m_width = 0;
+int m_height = 0;
 
 bool m_running = true;
 bool m_paused = false;

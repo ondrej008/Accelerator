@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 
 #include <cmath>
+#include <vector>
 
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
@@ -18,7 +19,14 @@ struct Player
 Player();
 void update(double elapsed);
 void updateCamera(double xOffset, double yOffset);
-void render();
+void render(GLint modelL);
+void gameOver();
+
+void addVertex(float x, float y, float z);
+
+GLuint VAO;
+GLuint VBO;
+std::vector<float> vertices;
 
 float m_velocity;
 float m_radius;
