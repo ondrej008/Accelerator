@@ -30,6 +30,18 @@ void cursorPositionCallback(GLFWwindow* window, double xPos, double yPos)
     accelerator->onCursorPosition(xPos, yPos);
 }
 
+void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int mods)
+{
+    Accelerator* accelerator = (Accelerator*) glfwGetWindowUserPointer(window);
+
+    accelerator->onKey(key, scanCode, action, mods);
+}
+
+glm::vec2 screenToOpenGL(glm::vec2 pos, glm::vec2 dim)
+{
+    return glm::vec2((pos.x / (dim.x * 0.5)) - 1.0, (pos.y / (dim.y * 0.5)) - 1.0);
+}
+
 Accelerator::Accelerator()
 {
     glfwSetErrorCallback(errorCallback);
@@ -50,6 +62,8 @@ Accelerator::Accelerator()
 
     m_window = glfwCreateWindow(mode->width, mode->height, "Akcelerátor", glfwGetPrimaryMonitor(), NULL);
 
+    glfwGetWindowSize(m_window, &m_width, &m_height);
+
     if(m_window == nullptr)
     {
         m_running = false;
@@ -61,6 +75,7 @@ Accelerator::Accelerator()
     glfwSetWindowCloseCallback(m_window, windowCloseCallback);
     glfwSetWindowFocusCallback(m_window, windowFocusCallback);
     glfwSetCursorPosCallback(m_window, cursorPositionCallback);
+    glfwSetKeyCallback(m_window, keyCallback);
     
     glfwMakeContextCurrent(m_window);
 
@@ -72,6 +87,22 @@ Accelerator::Accelerator()
     }
 
     glfwSwapInterval(1);
+    glEnable(GL_DEPTH_TEST);
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK); // default
+    glFrontFace(GL_CCW); // default
+
+
+    m_player = new Player;
+
+    m_projection = glm::perspective(glm::radians(45.0), (double) m_width / (double) m_height, 0.01, 100.0);
+
+    if(!m_shader.loadFromFiles("basic.vert", "basic.frag"))
+    {
+        printToFile("ERROR reading files, aborting...\n");
+        m_running = false;
+    }
 
     RECORD_TIMING("glfw init");
 }
@@ -116,9 +147,9 @@ void Accelerator::run()
                         "\n"
                 );
             
-                printToFile("yaw: " + std::to_string(m_player.m_yaw) +
-                            ", pitch: " + std::to_string(m_player.m_pitch) +
-                            ", pos: {" + std::to_string(m_player.m_pos.x) + ", " + std::to_string(m_player.m_pos.y) + ", " + std::to_string(m_player.m_pos.z) + "}" +
+                printToFile("yaw: " + std::to_string(m_player->m_yaw) +
+                            ", pitch: " + std::to_string(m_player->m_pitch) +
+                            ", pos: {" + std::to_string(m_player->m_pos.x) + ", " + std::to_string(m_player->m_pos.y) + ", " + std::to_string(m_player->m_pos.z) + "}" +
                             "\n"
                 );
 
@@ -145,12 +176,55 @@ void Accelerator::run()
 
 void Accelerator::update(double elapsed)
 {
-    m_player.update(elapsed);
+    m_player->update(elapsed);
 }
 
 void Accelerator::render()
 {
+    glUseProgram(m_shader.m_programID);
 
+    GLint modelL = glGetUniformLocation(m_shader.m_programID, "model");
+    GLint viewL = glGetUniformLocation(m_shader.m_programID, "view");
+    GLint projectionL = glGetUniformLocation(m_shader.m_programID, "projection");
+
+    glm::mat4 model(1.0);
+
+    glUniformMatrix4fv(modelL, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(viewL, 1, GL_FALSE, glm::value_ptr(m_player->m_view));
+    glUniformMatrix4fv(projectionL, 1, GL_FALSE, glm::value_ptr(m_projection));
+
+    renderCrosshair();
+
+    glBegin(GL_TRIANGLES);
+        glColor3f(0.0, 0.0, 1.0);
+        glVertex3f(-1.0, -1.0, -5.0);
+        glVertex3f(1.0, -1.0, -5.0);
+        glVertex3f(0.0, 1.0, -5.0);
+    glEnd();
+
+    m_player->render(modelL);
+}
+
+void Accelerator::renderCrosshair()
+{
+    glPointSize(1.0);
+
+    glBegin(GL_POINTS);
+        glColor3f(1.0, 1.0, 1.0);
+        
+        for(int i = -5; i <= 5; i++)
+        {
+            for(int j = -5; j <= 5; j++)
+            {
+                if(i == -5 || i == 5 || j == -5 || j == 5) 
+                {
+                    glm::vec2 vtx = screenToOpenGL(glm::vec2(i + m_width / 2.0, j + m_height / 2.0), glm::vec2(m_width, m_height));
+                    glVertex2f(vtx.x, vtx.y);
+                }
+            }
+        }
+
+    glEnd();
 }
 
 void Accelerator::onWindowClose()
@@ -180,8 +254,24 @@ void Accelerator::onCursorPosition(double xPos, double yPos)
         firstMouse = false;
     }
 
-    m_player.updateCamera(lastX - xPos, yPos - lastY); // reverted since GLFW coords go top to bottom
+    m_player->updateCamera(xPos - lastX, lastY - yPos); // reverted since GLFW coords go top to bottom
 
     lastX = xPos;
     lastY = yPos;
+}
+
+void Accelerator::onKey(int key, int scanCode ,int action, int mods)
+{
+    if(action == GLFW_RELEASE)
+    {
+        if(key == GLFW_KEY_ESCAPE)
+        {
+            m_running = false;
+            printToFile("User pressed ESCAPE, closing...\n");
+        }
+        else if(key == GLFW_KEY_W)
+        {
+            m_player->gameOver();
+        }
+    }
 }
