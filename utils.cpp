@@ -14,6 +14,11 @@ void printToFile(std::string str)
     file.close();
 }
 
+std::string vec3ToString(glm::vec3 pos)
+{
+    return "{" + std::to_string(pos.x) + ", " + std::to_string(pos.y) + ", " + std::to_string(pos.z) + "}";
+}
+
 void clearFile()
 {
     std::ofstream file("out.txt", std::ios_base::out);

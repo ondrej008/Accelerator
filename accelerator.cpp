@@ -93,10 +93,13 @@ Accelerator::Accelerator()
     glCullFace(GL_BACK); // default
     glFrontFace(GL_CCW); // default
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     m_player = new Player;
+    m_tunnel = new Tunnel;
 
-    m_projection = glm::perspective(glm::radians(45.0), (double) m_width / (double) m_height, 0.01, 100.0);
+    m_projection = glm::perspective((double) glm::radians(m_fov), (double) m_width / (double) m_height, 0.01, 100.0);
 
     if(!m_shader.loadFromFiles("basic.vert", "basic.frag"))
     {
@@ -110,6 +113,12 @@ Accelerator::Accelerator()
 Accelerator::~Accelerator()
 {
     printToFile("Shutting down...\n");
+
+    printToFile("update: " + std::to_string(m_update) + ", render: " + std::to_string(m_render) + ", swap: " + std::to_string(m_swap) + ", total: " + std::to_string(m_total) + ", ran for: " + std::to_string((std::chrono::high_resolution_clock::now() - m_start).count() / std::pow(10.0, 9.0)));
+
+    delete m_player;
+    delete m_tunnel;
+
     glfwDestroyWindow(m_window);
     glfwTerminate();
 }
@@ -150,8 +159,13 @@ void Accelerator::run()
                 printToFile("yaw: " + std::to_string(m_player->m_yaw) +
                             ", pitch: " + std::to_string(m_player->m_pitch) +
                             ", pos: {" + std::to_string(m_player->m_pos.x) + ", " + std::to_string(m_player->m_pos.y) + ", " + std::to_string(m_player->m_pos.z) + "}" +
+                            ", velocity: " + std::to_string(m_player->m_velocity) + 
                             "\n"
                 );
+
+                std::string windowStr = "Akcelerátor - " + std::to_string((double) (m_frames - lastFrames) / printCooldown) + ", " + std::to_string(m_player->m_velocity) + ", " + std::to_string(m_player->m_pos.z) + ", " + std::to_string(FLT_EPSILON * m_player->m_pos.z);
+
+                glfwSetWindowTitle(m_window, windowStr.c_str());
 
                 lastPrint = last;
                 lastFrames = m_frames;
@@ -159,30 +173,48 @@ void Accelerator::run()
 
             if(!m_paused)
             {
+                auto startU = std::chrono::high_resolution_clock::now();
                 update(elapsed);
+                m_update += ((std::chrono::high_resolution_clock::now() - startU).count() / std::pow(10.0, 9.0));
             }
 
-            glClearColor(1.0, 0.0, 0.0, 1.0);
+            glClearColor(0.0, 0.0, 0.0, 1.0);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            auto startR = std::chrono::high_resolution_clock::now();
+
             render();
+
+            m_render += ((std::chrono::high_resolution_clock::now() - startR).count() / std::pow(10.0, 9.0));
 
             ++m_frames;
         }
 
+        auto startS = std::chrono::high_resolution_clock::now();
+
         glfwSwapBuffers(m_window);
+
+        m_swap += ((std::chrono::high_resolution_clock::now() - startS).count() / std::pow(10.0, 9.0));
+        m_total += ((std::chrono::high_resolution_clock::now() - last).count() / std::pow(10.0, 9.0));
     }
 }
 
 void Accelerator::update(double elapsed)
 {
     m_player->update(elapsed);
+    m_tunnel->update(elapsed, m_player->m_pos);
+
+    if(m_tunnel->playerCollide(m_player->m_pos, m_player->m_radius))
+    {
+        m_player->gameOver();
+    }
 }
 
 void Accelerator::render()
 {
     glUseProgram(m_shader.m_programID);
 
+    GLint colorL = glGetUniformLocation(m_shader.m_programID, "color");
     GLint modelL = glGetUniformLocation(m_shader.m_programID, "model");
     GLint viewL = glGetUniformLocation(m_shader.m_programID, "view");
     GLint projectionL = glGetUniformLocation(m_shader.m_programID, "projection");
@@ -193,38 +225,11 @@ void Accelerator::render()
     glUniformMatrix4fv(viewL, 1, GL_FALSE, glm::value_ptr(m_player->m_view));
     glUniformMatrix4fv(projectionL, 1, GL_FALSE, glm::value_ptr(m_projection));
 
-    renderCrosshair();
+    glm::vec4 color(0.0, 0.0, 0.0, 1.0);
 
-    glBegin(GL_TRIANGLES);
-        glColor3f(0.0, 0.0, 1.0);
-        glVertex3f(-1.0, -1.0, -5.0);
-        glVertex3f(1.0, -1.0, -5.0);
-        glVertex3f(0.0, 1.0, -5.0);
-    glEnd();
-
-    m_player->render(modelL);
-}
-
-void Accelerator::renderCrosshair()
-{
-    glPointSize(1.0);
-
-    glBegin(GL_POINTS);
-        glColor3f(1.0, 1.0, 1.0);
-        
-        for(int i = -5; i <= 5; i++)
-        {
-            for(int j = -5; j <= 5; j++)
-            {
-                if(i == -5 || i == 5 || j == -5 || j == 5) 
-                {
-                    glm::vec2 vtx = screenToOpenGL(glm::vec2(i + m_width / 2.0, j + m_height / 2.0), glm::vec2(m_width, m_height));
-                    glVertex2f(vtx.x, vtx.y);
-                }
-            }
-        }
-
-    glEnd();
+    m_tunnel->render(modelL, colorL);
+    m_player->render(modelL, colorL);
+    
 }
 
 void Accelerator::onWindowClose()
@@ -272,6 +277,16 @@ void Accelerator::onKey(int key, int scanCode ,int action, int mods)
         else if(key == GLFW_KEY_W)
         {
             m_player->gameOver();
+        }
+        else if(key == GLFW_KEY_KP_ADD)
+        {
+            m_fov += 5.0;
+            m_projection = glm::perspective((double) glm::radians(m_fov), (double) m_width / (double) m_height, 0.01, 100.0);
+        }
+        else if(key == GLFW_KEY_KP_SUBTRACT)
+        {
+            m_fov -= 5.0;
+            m_projection = glm::perspective((double) glm::radians(m_fov), (double) m_width / (double) m_height, 0.01, 100.0);
         }
     }
 }

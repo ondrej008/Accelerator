@@ -7,6 +7,7 @@ Player::Player()
 
     m_view = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0));
     m_pos = glm::vec3(0.0, 0.0, 0.0);
+    m_cameraPos = glm::vec3(0.0, 0.0, 0.0);
     m_cameraFront = glm::vec3(0.0, 0.0, -1.0);
     m_cameraUp = glm::vec3(0.0, 1.0, 0.0);
 
@@ -69,16 +70,13 @@ Player::Player()
     addVertex(-m_radius, m_radius, m_radius);
 
     glGenBuffers(1, &VBO);
-
-    glGenBuffers(1, &VAO);
+    glGenVertexArrays(1, &VAO);
 
     glBindVertexArray(VAO);
-
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*) 0);
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 }
 
 void Player::addVertex(float x, float y, float z)
@@ -90,15 +88,24 @@ void Player::addVertex(float x, float y, float z)
 
 void Player::update(double elapsed)
 {
-    m_pos += (float) (m_velocity * elapsed) * m_cameraFront;
+    if(m_velocity != 0.0)
+    {
+        m_pos += (float) (m_velocity * elapsed) * m_cameraFront;
+        m_cameraPos += (float) (m_velocity * elapsed) * m_cameraFront;
 
-    m_view = glm::lookAt(m_pos, m_pos + m_cameraFront, m_cameraUp);
+        m_view = glm::lookAt(m_cameraPos, m_cameraPos + m_cameraFront, m_cameraUp);
+
+        m_velocity += 0.1 * elapsed;
+
+        if(m_velocity > 20.0)
+            m_velocity = 20.0;
+    }
 }
 
 void Player::updateCamera(double xOffset, double yOffset)
 {
     //printToFile("Player::updateCamera(" + std::to_string(xOffset) + ", " + std::to_string(yOffset) + ")\n");
-
+    
     m_yaw += xOffset * m_sensitivity;
     m_pitch += yOffset * m_sensitivity;
 
@@ -118,18 +125,43 @@ void Player::updateCamera(double xOffset, double yOffset)
 
     m_cameraFront = glm::normalize(direction);
 
-    m_view = glm::lookAt(m_pos, m_pos + m_cameraFront, m_cameraUp);
+    if(m_velocity != 0.0)
+    {
+        m_view = glm::lookAt(m_cameraPos, m_cameraPos + m_cameraFront, m_cameraUp);
+    }
+    else
+    {
+        m_view = glm::lookAt(m_pos - m_cameraFront, m_pos, m_cameraUp);
+    }
+    
 }
 
-void Player::render(GLint modelL)
+void Player::render(GLint modelL, GLint colorL)
 {
     if(m_velocity == 0.0)
     {
-        glm::mat4 model = glm::translate(glm::mat4(1.0), (m_pos + (m_cameraFront * 2.0f)));
+        glm::mat4 model = glm::translate(glm::mat4(1.0), m_pos);
         glUniformMatrix4fv(modelL, 1, GL_FALSE, glm::value_ptr(model));
+        
+        glm::vec4 color(1.0, 1.0, 1.0, 0.5);
+        glUniform4fv(colorL, 1, glm::value_ptr(color));
 
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glBegin(GL_POINTS);
+            glVertex3f(0.0, 0.0, 0.0);
+        glEnd();
+
+        color = glm::vec4(1.0, 0.0, 0.0, 1.0);
+        glUniform4fv(colorL, 1, glm::value_ptr(color));
+
+        glBegin(GL_POINTS);
+            glVertex3f(m_radius, m_radius, m_radius);
+            glVertex3f(-m_radius, -m_radius, -m_radius);
+        glEnd();
     }
 }
 
@@ -138,5 +170,7 @@ void Player::gameOver()
     if(m_velocity == 0.0)
         return;
     m_velocity = 0.0;
-    m_pos += -2.0f * m_cameraFront;
+    m_cameraPos += -0.5f * m_cameraFront;
+
+    updateCamera(0.0, 0.0);
 }

@@ -19,7 +19,7 @@ struct Player
 Player();
 void update(double elapsed);
 void updateCamera(double xOffset, double yOffset);
-void render(GLint modelL);
+void render(GLint modelL, GLint colorL);
 void gameOver();
 
 void addVertex(float x, float y, float z);
@@ -33,6 +33,7 @@ float m_radius;
 
 glm::mat4 m_view;
 glm::vec3 m_pos;
+glm::vec3 m_cameraPos;
 glm::vec3 m_cameraFront;
 glm::vec3 m_cameraUp;
 
