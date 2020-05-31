@@ -1,5 +1,9 @@
 #include "player.hpp"
 
+#include <iomanip>
+#include <fstream>
+#include <chrono>
+
 Player::Player()
 {
     m_velocity = 1.0;
@@ -101,10 +105,25 @@ void Player::update(double elapsed)
 
         m_view = glm::lookAt(m_cameraPos, m_cameraPos + m_cameraFront, m_cameraUp);
 
-        m_velocity += 0.1 * elapsed;
+        
 
         if(m_velocity > 20.0)
+        {
+            std::ofstream file("highscore.txt", std::ios_base::app | std::ios_base::out);
+
+            auto t = std::time(nullptr);
+            auto tm = *std::localtime(&t);
+
+            file << "[" << std::put_time(&tm, "%d-%m %H:%M:%S") << "]: " << "Reached maximum velocity at distance: " << std::abs(m_pos.z) << std::endl;
+
+            file.close();
+
             m_velocity = 20.0;
+        }
+        else
+        {
+            m_velocity += 0.1 * elapsed;
+        }
     }
 }
 
@@ -163,6 +182,19 @@ void Player::gameOver()
 {
     if(m_velocity == 0.0)
         return;
+
+    std::ofstream file("highscore.txt", std::ios_base::app | std::ios_base::out);
+
+    if(file.is_open())
+    {
+        auto t = std::time(nullptr);
+        auto tm = *std::localtime(&t);
+
+        file << "[" << std::put_time(&tm, "%d-%m %H:%M:%S") << "]: " << "Distance: " << std::abs(m_pos.z) << ", velocity: " << m_velocity << std::endl;
+
+        file.close();
+    }
+
     m_velocity = 0.0;
     m_cameraPos += -0.5f * m_cameraFront;
 

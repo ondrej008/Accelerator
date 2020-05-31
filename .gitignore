@@ -4,5 +4,6 @@
 *.d
 *.o
 out.txt
+highscore.txt
 Accelerator/
 Accelerator.zip

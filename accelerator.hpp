@@ -23,15 +23,6 @@ public:
 	// This function contains the game loop,
 	void run();
 
-	// This function is ran by the game loop, with "elapsed" being the
-	// amount of time in seconds between the last frame and this frame.
-	// Updates the tunnel and player.
-	void update(double elapsed);
-
-	// This function is ran by the game loop,
-	// it tells the tunnel and player to render themselves.
-	void render();
-
 	// These are callbacks for getting various events that happen to the window.
 	// onWindowClose gets called when the window is closing by something the user did.
 	// onWindowFocus gets called when the window is either in, or out of focus, which happens when the user tabs out (Alt + Tab). Pauses the game if it becomes out of focus.
@@ -42,7 +33,17 @@ public:
 	void onWindowFocus(bool focused);
 	void onWindowSize(int width, int height);
 	void onCursorPosition(double xPos, double yPos);
-	void onKey(int key, int scanCode ,int action, int mods);
+	void onKey(int key, int scanCode, int action, int mods);
+
+private:
+	// This function is ran by the game loop, with "elapsed" being the
+	// amount of time in seconds between the last frame and this frame.
+	// Updates the tunnel and player.
+	void update(double elapsed);
+
+	// This function is ran by the game loop,
+	// it tells the tunnel and player to render themselves.
+	void render();
 
 	// Pointers to the tunnel and player objects.
 	Tunnel* m_tunnel;
@@ -84,4 +85,7 @@ public:
 	double m_update = 0;
 	double m_swap = 0;
 	double m_total = 0;
+
+	// If vertical synchronization is enabled.
+	bool m_vsync = true;
 };

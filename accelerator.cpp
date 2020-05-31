@@ -320,5 +320,18 @@ void Accelerator::onKey(int key, int scanCode ,int action, int mods)
                 }
             }
         }
+        else if(key == GLFW_KEY_P)
+        {
+            if(m_vsync)
+            {
+                glfwSwapInterval(0);
+                m_vsync = false;
+            }
+            else
+            {
+                glfwSwapInterval(1);
+                m_vsync = true;
+            }
+        }
     }
 }
