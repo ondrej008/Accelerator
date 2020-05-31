@@ -23,6 +23,13 @@ void windowFocusCallback(GLFWwindow* window, int focused)
     accelerator->onWindowFocus(focused);
 }
 
+void windowSizeCallback(GLFWwindow* window, int width, int height)
+{
+    Accelerator* accelerator = (Accelerator*) glfwGetWindowUserPointer(window);
+
+    accelerator->onWindowSize(width, height);
+}
+
 void cursorPositionCallback(GLFWwindow* window, double xPos, double yPos)
 {
     Accelerator* accelerator = (Accelerator*) glfwGetWindowUserPointer(window);
@@ -74,6 +81,7 @@ Accelerator::Accelerator()
 
     glfwSetWindowCloseCallback(m_window, windowCloseCallback);
     glfwSetWindowFocusCallback(m_window, windowFocusCallback);
+    glfwSetWindowSizeCallback(m_window, windowSizeCallback);
     glfwSetCursorPosCallback(m_window, cursorPositionCallback);
     glfwSetKeyCallback(m_window, keyCallback);
     
@@ -174,7 +182,7 @@ void Accelerator::run()
             if(!m_paused)
             {
                 auto startU = std::chrono::high_resolution_clock::now();
-                //update(elapsed);
+                update(elapsed);
                 m_update += ((std::chrono::high_resolution_clock::now() - startU).count() / std::pow(10.0, 9.0));
             }
 
@@ -227,8 +235,8 @@ void Accelerator::render()
 
     glm::vec4 color(0.0, 0.0, 0.0, 1.0);
 
-    //m_tunnel->render(modelL, colorL);
-    //m_player->render(modelL, colorL);
+    m_tunnel->render(modelL, colorL);
+    m_player->render(modelL, colorL);
     
 }
 
@@ -241,6 +249,16 @@ void Accelerator::onWindowClose()
 void Accelerator::onWindowFocus(bool focused)
 {
     printToFile("onWindowFocus(" + std::string(focused ? "true" : "false") + ")\n");
+}
+
+void Accelerator::onWindowSize(int width, int height)
+{
+    printToFile("onWindowSize(" + std::to_string(width) + ", " + std::to_string(height) + ")\n");
+
+    glViewport(0, 0, width, height);
+
+    m_width = width;
+    m_height = height;
 }
 
 void Accelerator::onCursorPosition(double xPos, double yPos)
@@ -283,8 +301,24 @@ void Accelerator::onKey(int key, int scanCode ,int action, int mods)
             delete m_tunnel;
             m_tunnel = new Tunnel;
 
-            //delete m_player;
-            //m_player = new Player;
+            delete m_player;
+            m_player = new Player;
+        }
+        else if(key == GLFW_KEY_ENTER)
+        {
+            if(mods & GLFW_MOD_SHIFT)
+            {
+                const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
+                if(glfwGetWindowMonitor(m_window) != NULL)
+                {
+                    glfwSetWindowMonitor(m_window, NULL, 64, 128, mode->width - 128, mode->height - 256, mode->refreshRate);
+                }
+                else
+                {
+                    glfwSetWindowMonitor(m_window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
+                }
+            }
         }
     }
 }

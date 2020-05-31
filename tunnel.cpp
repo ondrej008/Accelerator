@@ -43,7 +43,7 @@ void Tunnel::generateNewSegment()
     glm::vec4 perspective;
     glm::decompose(m_segments.back().m_model, scale, orientation, translation, skew, perspective);
 
-    TunnelSegment segment(10.0, glm::vec3(translation.x, translation.y, translation.z - m_segments.back().m_cyl.getHeight() / 2.0 - 5.0));
+    TunnelSegment segment(10.0, glm::vec3(translation.x, translation.y, translation.z - m_segments.back().m_cylinder.getHeight() / 2.0 - 5.0));
 
     m_segments.push_back(segment);
 
@@ -87,7 +87,7 @@ void Tunnel::generateNewObstacle(glm::vec3 pos)
             std::uniform_real_distribution<float> rng(0.1, 0.5);
             float speed = rng(m_engine);
             float vertical = rng(m_engine);
-            MovingObstacle* mo = new MovingObstacle(pos, speed, vertical > 0.55);
+            MovingObstacle* mo = new MovingObstacle(pos, speed, vertical > 0.3);
             m_obstacles.push_back(mo);
             break;
         }
@@ -105,7 +105,7 @@ void Tunnel::update(double elapsed, glm::vec3 playerPos)
         glm::vec4 perspective;
         glm::decompose(m_segments[i].m_model, scale, orientation, translation, skew, perspective);
 
-        if(translation.z - playerPos.z - (m_segments[i].m_cyl.getHeight()/2.0) > 0.5)
+        if(translation.z - playerPos.z - (m_segments[i].m_cylinder.getHeight()/2.0) > 0.5)
         {
             generateNewSegment();
             m_segments.erase(m_segments.begin() + i);

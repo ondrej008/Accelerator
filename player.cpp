@@ -69,11 +69,11 @@ Player::Player()
     addVertex(-m_radius, -m_radius, -m_radius);
     addVertex(-m_radius, m_radius, m_radius);
 
-    glGenBuffers(1, &VBO);
-    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &m_VBO);
+    glGenVertexArrays(1, &m_VAO);
 
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindVertexArray(m_VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -81,8 +81,8 @@ Player::Player()
 
 Player::~Player()
 {
-    glDeleteBuffers(1, &VBO);
-    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &m_VBO);
+    glDeleteVertexArrays(1, &m_VAO);
 }
 
 void Player::addVertex(float x, float y, float z)
@@ -152,7 +152,7 @@ void Player::render(GLint modelL, GLint colorL)
         glm::vec4 color(1.0, 1.0, 1.0, 0.5);
         glUniform4fv(colorL, 1, glm::value_ptr(color));
 
-        glBindVertexArray(VAO);
+        glBindVertexArray(m_VAO);
         glDrawArrays(GL_TRIANGLES, 0, vertices.size());
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);

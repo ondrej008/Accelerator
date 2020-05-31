@@ -14,9 +14,11 @@
 // which can then be used by OpenGL.
 struct Shader
 {
-// Reads files at path "vertex" and "fragment", compiles them and attaches them to a program.
-bool loadFromFiles(std::string vertex, std::string fragment);
+public:
+	// Reads files at path "vertex" and "fragment", compiles them and attaches them to a program.
+	// Returns true if successful.
+	bool loadFromFiles(std::string vertex, std::string fragment);
 
-// The program ID that we got from the shaders.
-GLuint m_programID;
+	// The program ID that we got from the shaders.
+	GLuint m_programID;
 };
