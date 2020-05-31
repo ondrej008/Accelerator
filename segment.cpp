@@ -12,3 +12,8 @@ void TunnelSegment::render(GLint modelL)
 
     m_cyl.drawSide();
 }
+
+void TunnelSegment::update(double elapsed)
+{
+
+}

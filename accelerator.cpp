@@ -174,7 +174,7 @@ void Accelerator::run()
             if(!m_paused)
             {
                 auto startU = std::chrono::high_resolution_clock::now();
-                update(elapsed);
+                //update(elapsed);
                 m_update += ((std::chrono::high_resolution_clock::now() - startU).count() / std::pow(10.0, 9.0));
             }
 
@@ -227,8 +227,8 @@ void Accelerator::render()
 
     glm::vec4 color(0.0, 0.0, 0.0, 1.0);
 
-    m_tunnel->render(modelL, colorL);
-    m_player->render(modelL, colorL);
+    //m_tunnel->render(modelL, colorL);
+    //m_player->render(modelL, colorL);
     
 }
 
@@ -278,15 +278,13 @@ void Accelerator::onKey(int key, int scanCode ,int action, int mods)
         {
             m_player->gameOver();
         }
-        else if(key == GLFW_KEY_KP_ADD)
+        else if(key == GLFW_KEY_SPACE)
         {
-            m_fov += 5.0;
-            m_projection = glm::perspective((double) glm::radians(m_fov), (double) m_width / (double) m_height, 0.01, 100.0);
-        }
-        else if(key == GLFW_KEY_KP_SUBTRACT)
-        {
-            m_fov -= 5.0;
-            m_projection = glm::perspective((double) glm::radians(m_fov), (double) m_width / (double) m_height, 0.01, 100.0);
+            delete m_tunnel;
+            m_tunnel = new Tunnel;
+
+            //delete m_player;
+            //m_player = new Player;
         }
     }
 }

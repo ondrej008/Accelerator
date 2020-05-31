@@ -79,6 +79,12 @@ Player::Player()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 }
 
+Player::~Player()
+{
+    glDeleteBuffers(1, &VBO);
+    glDeleteVertexArrays(1, &VAO);
+}
+
 void Player::addVertex(float x, float y, float z)
 {
     vertices.push_back(x);
@@ -150,18 +156,6 @@ void Player::render(GLint modelL, GLint colorL)
         glDrawArrays(GL_TRIANGLES, 0, vertices.size());
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-        glBegin(GL_POINTS);
-            glVertex3f(0.0, 0.0, 0.0);
-        glEnd();
-
-        color = glm::vec4(1.0, 0.0, 0.0, 1.0);
-        glUniform4fv(colorL, 1, glm::value_ptr(color));
-
-        glBegin(GL_POINTS);
-            glVertex3f(m_radius, m_radius, m_radius);
-            glVertex3f(-m_radius, -m_radius, -m_radius);
-        glEnd();
     }
 }
 

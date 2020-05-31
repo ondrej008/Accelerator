@@ -34,6 +34,15 @@ StaticObstacle::StaticObstacle(glm::vec3 pos, bool normal)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 }
 
+StaticObstacle::~StaticObstacle()
+{
+	glDeleteBuffers(1, &m_VBO1);
+	glDeleteBuffers(1, &m_VBO2);
+
+	glDeleteVertexArrays(1, &m_VAO1);
+	glDeleteVertexArrays(1, &m_VAO2);
+}
+
 bool StaticObstacle::playerCollide(glm::vec3 pos, float radius)
 {
 	Cuboid player(radius, radius, radius);

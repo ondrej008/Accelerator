@@ -68,6 +68,11 @@ Cuboid::Cuboid(float width, float height, float length)
 	addVertex(-width, -height, length);
 }
 
+Cuboid::~Cuboid()
+{
+	
+}
+
 void Cuboid::addVertex(float x, float y, float z)
 {
 	m_vertices.push_back(x);

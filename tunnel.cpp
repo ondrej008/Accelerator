@@ -3,6 +3,8 @@
 #include <cmath>
 #include <random>
 #include <chrono>
+#include <memory>
+#include <sstream>
 
 Tunnel::Tunnel()
 {
@@ -13,6 +15,15 @@ Tunnel::Tunnel()
     for(int i = 0; i < 15; i++)
     {
         generateNewSegment();
+    }
+}
+
+Tunnel::~Tunnel()
+{
+    for(int i = 0; i < m_obstacles.size(); i++)
+    {
+        m_obstacles.erase(m_obstacles.begin() + i);
+        i--;
     }
 }
 
@@ -41,10 +52,10 @@ void Tunnel::generateNewSegment()
 
 void Tunnel::generateNewObstacle(glm::vec3 pos)
 {
-    // 10.0% chance for nothing
-    // 30.0% chance for static obstacle
-    // 30.0% chance for rotating obstacle
-    // 30.0% chance for moving obstacle
+    // 20.0% chance for nothing
+    // 40.0% chance for static obstacle
+    // 0.0% chance for rotating obstacle
+    // 40.0% chance for moving obstacle
 
     std::uniform_int_distribution<int> distribution(1, 10);
 
@@ -55,31 +66,25 @@ void Tunnel::generateNewObstacle(glm::vec3 pos)
     switch(roll)
     {
         case 1:
-            // nothing
-            m_lastObstacle = pos;
-            break;
         case 2:
+            // nothing
+            break;
         case 3:
         case 4:
+        case 5:
+        case 6:
         {
             roll = distribution(m_engine);
             StaticObstacle* so = new StaticObstacle(pos, roll > 5);
             m_obstacles.push_back(so);
             break;
         }
-        case 5:
-        case 6:
         case 7:
-        {
-            //RotatingObstacle* ro = new RotatingObstacle(pos, speed);
-            //m_obstacles.push_back(ro);
-            break;
-        }
         case 8:
         case 9:
         case 10:
         {
-            std::uniform_real_distribution<float> rng(0.1, 1.0);
+            std::uniform_real_distribution<float> rng(0.1, 0.5);
             float speed = rng(m_engine);
             float vertical = rng(m_engine);
             MovingObstacle* mo = new MovingObstacle(pos, speed, vertical > 0.55);
@@ -104,6 +109,7 @@ void Tunnel::update(double elapsed, glm::vec3 playerPos)
         {
             generateNewSegment();
             m_segments.erase(m_segments.begin() + i);
+            i--;
         }
     }
 
@@ -111,8 +117,8 @@ void Tunnel::update(double elapsed, glm::vec3 playerPos)
     {
         if(m_obstacles[i]->update(elapsed, playerPos))
         {
-            delete m_obstacles[i];
             m_obstacles.erase(m_obstacles.begin() + i);
+            i--;
         }
     }
 }

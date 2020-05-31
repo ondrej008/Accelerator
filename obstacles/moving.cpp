@@ -33,6 +33,15 @@ MovingObstacle::MovingObstacle(glm::vec3 pos, float speed, bool vertical)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 }
 
+MovingObstacle::~MovingObstacle()
+{
+	glDeleteBuffers(1, &m_VBO1);
+	glDeleteBuffers(1, &m_VBO2);
+
+	glDeleteVertexArrays(1, &m_VAO1);
+	glDeleteVertexArrays(1, &m_VAO2);
+}
+
 bool MovingObstacle::playerCollide(glm::vec3 pos, float radius)
 {
 	Cuboid player(radius, radius, radius);
